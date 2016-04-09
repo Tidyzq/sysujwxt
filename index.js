@@ -9,8 +9,7 @@ var jwxtResult = {
     "wrongPassword": 3,
     "wrongCheckCode": 4,
     "needCookie": 5,
-    "needCheckCode": 6,
-    "needLogin": 7
+    "needLogin": 6
 }
 
 var message = [];
@@ -93,7 +92,6 @@ sysujwxt.getCheckCode = function() {
                     res.on('data', function (chunk) {
                         imageData += chunk;
                     }).on('end', function () {
-                        sysujwxt.loginInfo.checkcode = true;
                         resolve(imageData);
                     });
                 } else {
@@ -108,10 +106,10 @@ sysujwxt.getCheckCode = function() {
 
 sysujwxt.login = function(username, password, checkcode) {
     return new Promise(function (resolve, reject) {
-        if (sysujwxt.loginInfo && sysujwxt.loginInfo.checkcode) {
+        if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid) {
             resolve();
         } else {
-            reject(jwxtResult.needCheckCode);
+            reject(jwxtResult.needCookie);
         }
     }).then(function () {
         return new Promise(function (resolve, reject) {
@@ -166,7 +164,7 @@ sysujwxt.login = function(username, password, checkcode) {
 
 sysujwxt.isLogin = function() {
     return new Promise(function (resolve, reject) {
-        if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid) {
+        if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid && sysujwxt.loginInfo.rno) {
             resolve();
         } else {
             reject(jwxtResult.needCookie);

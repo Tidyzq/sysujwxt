@@ -28,7 +28,6 @@ describe('sysujwxt', function() {
 			sysujwxt.loginInfo = null;
 			return sysujwxt.getCheckCode().then(function (imageData) {
 				assert(imageData);
-				assert(sysujwxt.loginInfo.checkcode);
 			}).catch(function (error) {
 				throw sysujwxt.errorMessage(error);
 			});
@@ -91,12 +90,14 @@ describe('sysujwxt', function() {
 				throw sysujwxt.errorMessage(error);
 			});
 		});
-		it('未获取验证码时应该返回需要验证码', function () {
+		it('未获取验证码时应该返回验证码错误', function () {
 			sysujwxt.loginInfo = null;
-			return sysujwxt.login(config.correct.username, config.correct.password, '12345').then(function () {
-				throw sysujwxt.error.success;
-			}, function (error) {
-				assert.equal(sysujwxt.error.needCheckCode, error);
+			return sysujwxt.getCookie().then(function () {
+				return sysujwxt.login(config.correct.username, config.correct.password, '12345').then(function () {
+					throw sysujwxt.error.success;
+				}, function (error) {
+					assert.equal(sysujwxt.error.wrongCheckCode, error);
+				});
 			}).catch(function (error) {
 				throw sysujwxt.errorMessage(error);
 			});
