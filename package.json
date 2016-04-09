@@ -1,7 +1,7 @@
 {
   "name": "sysujwxt",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.0.1",
+  "private": false,
   "main": "index.js",
   "scripts": {
     "test": "mocha test.js"
@@ -11,5 +11,20 @@
   },
   "devDependencies": {
     "python-shell": "^0.4.0"
-  }
+  },
+  "description": "## 中山大学教务系统API",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tidyzq/sysujwxt.git"
+  },
+  "keywords": [
+    "sysu",
+    "jwxt"
+  ],
+  "author": "tidyzq",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Tidyzq/sysujwxt/issues"
+  },
+  "homepage": "https://github.com/Tidyzq/sysujwxt#readme"
 }
