@@ -47,9 +47,7 @@ describe('sysujwxt', function() {
 					});
 				}).then(function (results) {
 					assert(results[0]);
-					sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
-						done();
-					});
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]);
 				});
 			}).catch(function (error) {
 				throw sysujwxt.errorMessage(error);
