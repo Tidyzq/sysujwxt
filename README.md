@@ -1,8 +1,8 @@
-# node.js API for jwxt of SYSU
+# API of the education system of SYSU
 
 ## 中山大学教务系统API
 
-### Quick Start
+## Quick Start
 	
 	var sysujwxt = require('sysujwxt');
 	
@@ -30,17 +30,17 @@
 	});
 
 ---
-### Usage
-#### sysujwxt#getCookie()
+## Usage
+### sysujwxt#getCookie()
 if operation **success**, cookie will be stored in **sysujwxt#loginInfo** and return a `Promise.resolve()`.  
 if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.  
 
-#### sysujwxt#getCheckCode()
+### sysujwxt#getCheckCode()
 this function will automaticly calls **sysujwxt#getCookie**.  
 if operation **success**, will return a `Promise.resolve(imageData)`, where `imageData` is the data of image in base64 format.  
 if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.  
 
-#### sysujwxt#login(username, password, checkcode)
+### sysujwxt#login(username, password, checkcode)
 `username` is the student id, such as '14330001'.  
 `password` is the password of the jwxt.  
 `checkcode` is the text on the image got by calling. **sysujwxt#getCheckCode**  
@@ -48,7 +48,12 @@ you need either manually set the value of **sysujwxt#loginInfo** or simply calls
 if operation **success**, will return a `Promise.resolve()`.   
 if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.  
 
-#### sysujwxt#getTimeTable(xnd, xq)
+### sysujwxt#isLogin()
+this function will check if the user is alreadly loged in, user is recognized by setting the different **sysujwxt.loginInfo**.    
+if operation **success**, will return a `Promise.resolve()`.   
+if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.
+
+### sysujwxt#getTimeTable(xnd, xq)
 `xnd` is the year span of the school year you want to check, such as '2015-2016'.  
 `xq` is the semester you want to check, such as '2'.  
 if operation **success**, will return a `Promise.resolve(courses)`, where `courses` is the data of the courses in array in the following format:
@@ -64,13 +69,19 @@ if operation **success**, will return a `Promise.resolve(courses)`, where `cours
   
 if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**. 
 
-#### sysujwxt#getScores(xnd, xq)
+### sysujwxt#getScores(xnd, xq)
 `xnd` is the year span of the school year you want to check, such as '2015-2016'.  
 `xq` is the semester you want to check, such as '2'.  
 if operation **success**, will return a `Promise.resolve(courses)`, where `courses` is the data of the courses in array, and the format is the original format got from jwxt which is quite complex so you'd better try to figure out it's meanings on your own XD.  
-if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**. 
+if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.  
 
-#### sysujwxt#error
+### sysujwxt#getElectResult(xnd, xq)
+`xnd` is the year span of the school year you want to check, such as '2015-2016'.  
+`xq` is the semester you want to check, such as '2'.  
+if operation **success**, will return a `Promise.resolve(courses)`, where `courses` is the data of the reulst of your course election in array, and the format is the original format got from jwxt.  
+if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one of the **sysujwxt#error**.  
+
+### sysujwxt#error
 + success
 + serverError
 + httpError
@@ -79,7 +90,7 @@ if **fail**, will return a `Promise.reject(errorCode)`, where `errorCode` is one
 + needCookie
 + needLogin
 
-#### sysujwxt#errorMessage(errorCode)
+### sysujwxt#errorMessage(errorCode)
 put an error code of **sysujwxt#error** and it will give back the message of the error.  
 for example:
 	
@@ -87,6 +98,8 @@ for example:
 	// return "http error"
 
 ---
-### Update
+## Update
+2016/4/11
+添加查询选课结果
 2016/4/9
 目前只支持获取课程表和查询成绩

@@ -68,7 +68,7 @@ sysujwxt.getCheckCode = function() {
     return new Promise(function (resolve, reject) {
         sysujwxt.loginInfo ? resolve() : reject(jwxtResult.needCookie);
     })
-    .catch((error) => {
+    .catch(function (error) {
         if (error == jwxtResult.needCookie)
             return sysujwxt.getCookie();
         else
@@ -205,7 +205,7 @@ sysujwxt.isLogin = function() {
     })
 }
 
-sysujwxt.getTimeTable = function(xnd, xq) {
+sysujwxt.getTimeTable = function(year, term) {
     return new Promise(function (resolve, reject) {
         if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid) {
             resolve();
@@ -213,21 +213,15 @@ sysujwxt.getTimeTable = function(xnd, xq) {
             reject(jwxtResult.needLogin);
         }
     }).then(function () {
-        var postData = '{header:{"code": -100, "message": {"title": "", "detail": ""}},body:{dataStores:{},parameters:{"args": ["' + xq + '", "' + xnd + '"], "responseParam": "rs"}}}';
+        var postData = '{header:{"code": -100, "message": {"title": "", "detail": ""}},body:{dataStores:{},parameters:{"args": ["' + term + '", "' + year + '"], "responseParam": "rs"}}}';
         var options = {
             hostname: 'uems.sysu.edu.cn',
             path: '/jwxt/KcbcxAction/KcbcxAction.action?method=getList',
             method: 'POST',
             headers: {
-                'ajaxRequest': 'true',
                 'render': 'unieap',
-                '__clientType': 'unieap',
-                'workitemid': 'null',
-                'resourceid': 'null',
-                'Content-Type': 'multipart/form-data',
                 'Content-Length': postData.length,
                 'Cookie': 'JSESSIONID=' + sysujwxt.loginInfo.jsessionid,
-                'DNT': '1'
             }
         };
         return new Promise(function (resolve, reject) {
@@ -288,7 +282,7 @@ sysujwxt.getTimeTable = function(xnd, xq) {
     });
 };
 
-sysujwxt.getScore = function(xnd, xq) {
+sysujwxt.getScore = function(year, term) {
     return new Promise(function (resolve, reject) {
         if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid) {
             resolve();
@@ -296,21 +290,15 @@ sysujwxt.getScore = function(xnd, xq) {
             reject(jwxtResult.needLogin);
         }
     }).then(function () {
-        var postData = '{header:{"code": -100, "message": {"title": "", "detail": ""}},body:{dataStores:{kccjStore:{rowSet:{"primary":[],"filter":[],"delete":[]},name:"kccjStore",pageNumber:1,pageSize:100,recordCount:0,rowSetName:"pojo_com.neusoft.education.sysu.xscj.xscjcx.model.KccjModel",order:"t.xn, t.xq, t.kch, t.bzw"}},parameters:{"kccjStore-params": [{"name": "Filter_t.pylbm_0.9296534471892823", "type": "String", "value": "\'01\'", "condition": " = ", "property": "t.pylbm"}, {"name": "Filter_t.xn_0.034865942747631606", "type": "String", "value": "\'' + xnd + '\'", "condition": " = ", "property": "t.xn"}, {"name": "Filter_t.xq_0.6471972329784646", "type": "String", "value": "\'' + xq + '\'", "condition": " = ", "property": "t.xq"}], "args": ["student"]}}}';
+        var postData = '{header:{"code": -100, "message": {"title": "", "detail": ""}},body:{dataStores:{kccjStore:{rowSet:{"primary":[],"filter":[],"delete":[]},name:"kccjStore",pageNumber:1,pageSize:100,recordCount:0,rowSetName:"pojo_com.neusoft.education.sysu.xscj.xscjcx.model.KccjModel",order:"t.xn, t.xq, t.kch, t.bzw"}},parameters:{"kccjStore-params": [{"name": "Filter_t.pylbm_0.9296534471892823", "type": "String", "value": "\'01\'", "condition": " = ", "property": "t.pylbm"}, {"name": "Filter_t.xn_0.034865942747631606", "type": "String", "value": "\'' + year + '\'", "condition": " = ", "property": "t.xn"}, {"name": "Filter_t.xq_0.6471972329784646", "type": "String", "value": "\'' + term + '\'", "condition": " = ", "property": "t.xq"}], "args": ["student"]}}}';
         var options = {
             hostname: 'uems.sysu.edu.cn',
             path: '/jwxt/xscjcxAction/xscjcxAction.action?method=getKccjList',
             method: 'POST',
             headers: {
-                'ajaxRequest': 'true',
                 'render': 'unieap',
-                '__clientType': 'unieap',
-                'workitemid': 'null',
-                'resourceid': 'null',
-                'Content-Type': 'multipart/form-data',
                 'Content-Length': postData.length,
                 'Cookie': 'JSESSIONID=' + sysujwxt.loginInfo.jsessionid,
-                'DNT': '1'
             }
         };
         return new Promise(function (resolve, reject) {
@@ -327,7 +315,74 @@ sysujwxt.getScore = function(xnd, xq) {
                         if (/会话过期,请重新登录/.test(html)) { // 未登录
                             reject(jwxtResult.needLogin);
                         } else {
-                            resolve(eval('(' + html + ')').body.dataStores.kccjStore.rowSet.primary);
+                            try {
+                                var courses = eval('(' + html + ')').body.dataStores.kccjStore.rowSet.primary;
+                                for (var i = 0; i < courses.length; ++i) {
+                                    delete courses[i].class;
+                                }
+                                resolve(courses);
+                            } catch (error) {
+                                console.log(error);
+                                reject(jwxtResult.serverError);
+                            }
+                        }
+                    });
+                } else {
+                    reject(jwxtResult.serverError);
+                }
+            }).on('error', function (error) {
+                console.log(error);
+                reject(jwxtResult.httpError);
+            });
+            req.write(postData);
+            req.end();
+        });
+    });
+};
+
+sysujwxt.getElectResult = function(year, term) {
+    return new Promise(function (resolve, reject) {
+        if (sysujwxt.loginInfo && sysujwxt.loginInfo.jsessionid) {
+            resolve();
+        } else {
+            reject(jwxtResult.needLogin);
+        }
+    }).then(function () {
+        var postData = '{header:{"code": -100, "message": {"title": "", "detail": ""}},body:{dataStores:{xsxkjgStore:{rowSet:{"primary":[],"filter":[],"delete":[]},name:"xsxkjgStore",pageNumber:1,pageSize:100,recordCount:45,rowSetName:"pojo_com.neusoft.education.sysu.xk.xkjg.entity.XkjgxxEntity",order:"xkjg.xnd desc,xkjg.xq desc, xkjg.jxbh"}},parameters:{"xsxkjgStore-params": [{"name": "Filter_xkjg.xnd_0.7795633738978915", "type": "String", "value": "\'' + year + '\'", "condition": " = ", "property": "xkjg.xnd"}, {"name": "Filter_xkjg.xq_0.1267991526005824", "type": "String", "value": "\'' + term + '\'", "condition": " = ", "property": "xkjg.xq"}], "args": []}}}';
+        var options = {
+            hostname: 'uems.sysu.edu.cn',
+            path: '/jwxt/xstk/xstk.action?method=getXsxkjgxxlistByxh',
+            method: 'POST',
+            headers: {
+                'render': 'unieap',
+                'Content-Length': postData.length,
+                'Cookie': 'JSESSIONID=' + sysujwxt.loginInfo.jsessionid,
+            }
+        };
+        return new Promise(function (resolve, reject) {
+            var req = http.request(options, function (res) {
+                // console.log('STATUS: ' + res.statusCode);
+                // console.log('HEADERS: ' + JSON.stringify(res.headers));
+                res.setEncoding('utf8');
+                if (res.statusCode == 200) {
+                    var body = [];
+                    res.on('data', function (chunk) {
+                        body.push(chunk);
+                    }).on('end', function () {
+                        var html = body.join();
+                        if (/会话过期,请重新登录/.test(html)) { // 未登录
+                            reject(jwxtResult.needLogin);
+                        } else {
+                            try {
+                                var courses = eval('(' + html + ')').body.dataStores.xsxkjgStore.rowSet.primary;
+                                for (var i = 0; i < courses.length; ++i) {
+                                    delete courses[i].class;
+                                }
+                                resolve(courses);
+                            } catch (error) {
+                                console.log(error);
+                                reject(jwxtResult.serverError);
+                            }
                         }
                     });
                 } else {

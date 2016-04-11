@@ -19,7 +19,6 @@ describe('sysujwxt', function() {
 		it('应该能够获得checkCode', function () {
 			return sysujwxt.getCheckCode().then(function (imageData) {
 				assert(imageData);
-				assert(sysujwxt.loginInfo.checkcode);
 			}).catch(function (error) {
 				throw sysujwxt.errorMessage(error);
 			});
@@ -202,6 +201,31 @@ describe('sysujwxt', function() {
 				throw sysujwxt.errorMessage(error);
 			});
 		});
+		it('连续获取两次应该没有错误', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				var options = {
+					args: [imageData]
+				};
+				return new Promise(function (resolve, reject) {
+					PythonShell.run('verify.py', options, function (err, results) {
+						if (err) reject(err);
+						else resolve(results);
+					});
+				}).then(function (results) {
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
+						return sysujwxt.getTimeTable(config.correct.xnd, config.correct.xq).then(function (courses) {
+							assert.notDeepEqual([], courses);
+							return sysujwxt.getTimeTable(config.correct.xnd, config.correct.xq).then(function (courses) {
+								assert.notDeepEqual([], courses);
+							});
+						});
+					});
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
 	});
 	describe('#getScore()', function () {
 		it('正常获取应该无错误', function () {
@@ -253,6 +277,114 @@ describe('sysujwxt', function() {
 					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
 						return sysujwxt.getScore(config.wrong.xnd, config.wrong.xq).then(function (courses) {
 							assert.deepEqual([], courses);
+						});
+					});
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
+		it('连续获取两次应该没有错误', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				var options = {
+					args: [imageData]
+				};
+				return new Promise(function (resolve, reject) {
+					PythonShell.run('verify.py', options, function (err, results) {
+						if (err) reject(err);
+						else resolve(results);
+					});
+				}).then(function (results) {
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
+						return sysujwxt.getScore(config.correct.xnd, config.correct.xq).then(function (courses) {
+							assert.notDeepEqual([], courses);
+							return sysujwxt.getScore(config.correct.xnd, config.correct.xq).then(function (courses) {
+								assert.notDeepEqual([], courses);
+							});
+						});
+					});
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
+	});
+	describe('#getElectResult()', function () {
+		it('正常获取应该无错误', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				var options = {
+					args: [imageData]
+				};
+				return new Promise(function (resolve, reject) {
+					PythonShell.run('verify.py', options, function (err, results) {
+						if (err) reject(err);
+						else resolve(results);
+					});
+				}).then(function (results) {
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
+						return sysujwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
+							assert.notDeepEqual([], courses);
+						});
+					});
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
+		it('未登录获取应该返回需要登录', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				sysujwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
+					throw sysujwxt.error.success;
+				}, function (error) {
+					assert.equal(sysujwxt.error.needLogin, error);
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
+		it('错误参数应该返回空列表', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				var options = {
+					args: [imageData]
+				};
+				return new Promise(function (resolve, reject) {
+					PythonShell.run('verify.py', options, function (err, results) {
+						if (err) reject(err);
+						else resolve(results);
+					});
+				}).then(function (results) {
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
+						return sysujwxt.getElectResult(config.wrong.xnd, config.wrong.xq).then(function (courses) {
+							assert.deepEqual([], courses);
+						});
+					});
+				});
+			}).catch(function (error) {
+				throw sysujwxt.errorMessage(error);
+			});
+		});
+		it('连续获取两次应该没有错误', function () {
+			sysujwxt.loginInfo = null;
+			return sysujwxt.getCheckCode().then(function (imageData) {
+				var options = {
+					args: [imageData]
+				};
+				return new Promise(function (resolve, reject) {
+					PythonShell.run('verify.py', options, function (err, results) {
+						if (err) reject(err);
+						else resolve(results);
+					});
+				}).then(function (results) {
+					return sysujwxt.login(config.correct.username, config.correct.password, results[0]).then(function () {
+						return sysujwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
+							assert.notDeepEqual([], courses);
+							return sysujwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
+								assert.notDeepEqual([], courses);
+							});
 						});
 					});
 				});
