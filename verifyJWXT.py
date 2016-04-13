@@ -7,17 +7,14 @@ from PIL import Image
 import sys
 import pytesseract
 import re
+import base64
 
-# data = ''
-# for l in sys.stdin:
-# 	data = data + l
-data = sys.argv[1]
-jpegData = StringIO(data.decode('base64'))
-img = Image.open(jpegData).convert('RGB')
-adaptive = np.array(img)
+data = base64.decodestring(sys.argv[1])
+adaptive = np.asarray(bytearray(data), dtype='uint8')
+adaptive = cv2.imdecode(adaptive, cv2.IMREAD_COLOR) # 转换为灰度图
 for i in range(0, len(adaptive)):
 	for j in range(0, len(adaptive[0])):
-		sub = abs(230 - adaptive[i][j][0]) + abs(20 - adaptive[i][j][1]) + abs(20 - adaptive[i][j][1])
+		sub = abs(230 - adaptive[i][j][2]) + abs(20 - adaptive[i][j][1]) + abs(20 - adaptive[i][j][0])
 		if sub < 200:
 			adaptive[i][j] = [0, 0, 0]
 		else:
