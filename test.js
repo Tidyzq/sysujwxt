@@ -1,12 +1,24 @@
 var Error = require('./').Error;
-var jwxt = require('./').jwxt;
-var elect = require('./').elect;
+var JWXT = require('./').JWXT;
+var Elect = require('./').Elect;
 var http = require('http');
 var config = require('./config.test');
 var PythonShell = require('python-shell');
 var assert = require('assert');
 
 describe('jwxt', function() {
+
+    var jwxt = new JWXT();
+
+    beforeEach(function () {
+        jwxt.jsessionid = undefined;
+        jwxt.rno = undefined;
+    });
+
+    afterEach(function () {
+        jwxt.logout();
+    });
+
     this.timeout(10000);
 
     function autoLogin (username, password) {
@@ -21,30 +33,27 @@ describe('jwxt', function() {
                 });
             }).then(function (results) {
                 return jwxt.login(username, password, results[0])
-                    .catch(function (err) {
-                        if (Error.wrongCheckCode.code == err.code) {
-                            return autoLogin(username, password);
-                        } else {
-                            throw err;
-                        }
-                    });
+                .catch(function (err) {
+                    if (Error.wrongCheckCode.code == err.code) {
+                        return autoLogin(username, password);
+                    } else {
+                        throw err;
+                    }
+                });
             });
         });
     }
 
     describe('#getCookie()', function () {
         it('应该能够获得jsessionid和rno', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCookie().then(function () {
-                assert(jwxt.loginInfo);
-                assert(jwxt.loginInfo.jsessionid);
-                assert(jwxt.loginInfo.rno);
+                assert(jwxt.jsessionid);
+                assert(jwxt.rno);
             });
         });
     });
     describe('#getCheckCode()', function () {
         it('应该能够获得checkCode', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCookie().then(function () {
                 return jwxt.getCheckCode().then(function (imageData) {
                     assert(imageData);
@@ -52,7 +61,6 @@ describe('jwxt', function() {
             });
         });
         it('在没有获取cookie的情况下应该能够获得checkCode', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 assert(imageData);
             });
@@ -60,11 +68,9 @@ describe('jwxt', function() {
     });
     describe('#login()', function () {
         it('密码和验证码正确时应该能够正常登陆', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password);
         });
         it('密码错误时应该返回密码错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.wrong.password).then(function () {
                 throw Error.success;
             }, function (err) {
@@ -72,7 +78,6 @@ describe('jwxt', function() {
             });
         });
         it('验证码错误时应该返回验证码错误', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 return jwxt.login(config.correct.username, config.correct.password, '12345').then(function () {
                     throw Error.success;
@@ -82,7 +87,6 @@ describe('jwxt', function() {
             });
         });
         it('未获取验证码时应该返回验证码错误', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCookie().then(function () {
                 return jwxt.login(config.correct.username, config.correct.password, '12345').then(function () {
                     throw Error.success;
@@ -94,13 +98,11 @@ describe('jwxt', function() {
     });
     describe('#logout()', function () {
         it('登录后退出应该无错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.logout();
             });
         });
         it('未登录退出应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 return jwxt.logout().then(function () {
                     throw Error.success;
@@ -110,7 +112,6 @@ describe('jwxt', function() {
             });
         });
         it('退出两次应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.logout().then(function () {
                     return jwxt.logout().then(function () {
@@ -122,7 +123,6 @@ describe('jwxt', function() {
             });
         });
         it('未获取Cookie应该返回需要Cookie', function () {
-            jwxt.loginInfo = null;
             return jwxt.logout().then(function () {
                 throw Error.success;
             }, function (err) {
@@ -132,13 +132,11 @@ describe('jwxt', function() {
     });
     describe('#isLogin()', function () {
         it('正常登陆应该无错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.isLogin();
             });
         });
         it('退出后应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.logout().then(function () {
                     return jwxt.isLogin().then(function () {
@@ -150,7 +148,6 @@ describe('jwxt', function() {
             });
         });
         it('未登陆应该返回需要登陆', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 return jwxt.isLogin().then(function () {
                     throw Error.success;
@@ -160,7 +157,6 @@ describe('jwxt', function() {
             });
         });
         it('未获取Cookie应该返回需要Cookie', function () {
-            jwxt.loginInfo = null;
             return jwxt.isLogin().then(function () {
                 throw Error.success;
             }, function (err) {
@@ -170,7 +166,6 @@ describe('jwxt', function() {
     });
     describe('#getTimeTable()', function () {
         it('正常获取应该无错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getTimeTable(config.correct.xnd, config.correct.xq).then(function (table) {
                     assert.notDeepEqual([], table);
@@ -178,7 +173,6 @@ describe('jwxt', function() {
             });
         });
         it('未登录获取应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 return jwxt.getTimeTable(config.correct.xnd, config.correct.xq).then(function (table) {
                     throw Error.success;
@@ -188,7 +182,6 @@ describe('jwxt', function() {
             });
         });
         it('错误参数应该返回空列表', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getTimeTable(config.wrong.xnd, config.wrong.xq).then(function (table) {
                     assert.deepEqual([], table);
@@ -196,7 +189,6 @@ describe('jwxt', function() {
             });
         });
         it('连续获取两次应该没有错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getTimeTable(config.correct.xnd, config.correct.xq).then(function (courses) {
                     assert.notDeepEqual([], courses);
@@ -209,7 +201,6 @@ describe('jwxt', function() {
     });
     describe('#getScore()', function () {
         it('正常获取应该无错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getScore(config.correct.xnd, config.correct.xq).then(function (courses) {
                     assert.notDeepEqual([], courses);
@@ -217,7 +208,6 @@ describe('jwxt', function() {
             });
         });
         it('未登录获取应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 jwxt.getScore(config.correct.xnd, config.correct.xq).then(function (courses) {
                     throw Error.success;
@@ -227,7 +217,6 @@ describe('jwxt', function() {
             });
         });
         it('错误参数应该返回空列表', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getScore(config.wrong.xnd, config.wrong.xq).then(function (courses) {
                     assert.deepEqual([], courses);
@@ -235,7 +224,6 @@ describe('jwxt', function() {
             });
         });
         it('连续获取两次应该没有错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getScore(config.correct.xnd, config.correct.xq).then(function (courses) {
                     assert.notDeepEqual([], courses);
@@ -246,17 +234,16 @@ describe('jwxt', function() {
             });
         });
     });
-    describe('#getElectResult()', function () {
+    describe.only('#getElectResult()', function () {
         it('正常获取应该无错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
+                    console.log(courses);
                     assert.notDeepEqual([], courses);
                 });
             });
         });
         it('未登录获取应该返回需要登录', function () {
-            jwxt.loginInfo = null;
             return jwxt.getCheckCode().then(function (imageData) {
                 jwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
                     throw Error.success;
@@ -266,7 +253,6 @@ describe('jwxt', function() {
             });
         });
         it('错误参数应该返回空列表', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getElectResult(config.wrong.xnd, config.wrong.xq).then(function (courses) {
                     assert.deepEqual([], courses);
@@ -274,7 +260,6 @@ describe('jwxt', function() {
             });
         });
         it('连续获取两次应该没有错误', function () {
-            jwxt.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return jwxt.getElectResult(config.correct.xnd, config.correct.xq).then(function (courses) {
                     assert.notDeepEqual([], courses);
@@ -287,8 +272,19 @@ describe('jwxt', function() {
     });
 });
 
+describe('elect', function () {
 
-describe.only('elect', function () {
+    var elect = new Elect();
+
+    beforeEach(function () {
+        elect.jsessionid = undefined;
+        elect.sid = undefined;
+    });
+
+    afterEach(function () {
+        elect.logout();
+    });
+
     this.timeout(10000);
 
     function autoLogin (username, password) {
@@ -303,35 +299,31 @@ describe.only('elect', function () {
                 });
             }).then(function (results) {
                 return elect.login(username, password, results[0])
-                    .catch(function (err) {
-                        if (Error.wrongCheckCode.code == err.code) {
-                            return autoLogin(username, password);
-                        } else {
-                            throw err;
-                        }
-                    });
+                .catch(function (err) {
+                    if (Error.wrongCheckCode.code == err.code) {
+                        return autoLogin(username, password);
+                    } else {
+                        throw err;
+                    }
+                });
             });
         });
     }
 
     describe('#getCookie()', function () {
         it('应该能够获得jsessionid', function () {
-            elect.loginInfo = null;
             return elect.getCookie().then(function () {
-                assert(elect.loginInfo);
-                assert(elect.loginInfo.jsessionid);
+                assert(elect.jsessionid);
             });
         });
     });
     describe('#getCheckCode()', function () {
         it('应该能够获得checkCode', function () {
-            elect.loginInfo = null;
             return elect.getCookie().then(elect.getCheckCode()).then(function (imageData) {
                 assert(imageData);
             });
         });
         it('在没有获取cookie的情况下应该能够获得checkCode', function () {
-            elect.loginInfo = null;
             return elect.getCheckCode().then(function (imageData) {
                 assert(imageData);
             });
@@ -339,13 +331,11 @@ describe.only('elect', function () {
     });
     describe('#login()', function () {
         it('密码和验证码正确时应该能够正常登陆并且获取sid', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
-                assert(elect.loginInfo.sid);
+                assert(elect.sid);
             });
         });
         it('密码错误时应该返回密码错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.wrong.password).then(function () {
                 throw Error.success;
             }, function (err) {
@@ -353,7 +343,6 @@ describe.only('elect', function () {
             });
         });
         it('验证码错误时应该返回验证码错误', function () {
-            elect.loginInfo = null;
             return elect.getCheckCode().then(function (imageData) {
                 return elect.login(config.correct.username, config.correct.password, '12345').then(function () {
                     throw Error.success;
@@ -363,7 +352,6 @@ describe.only('elect', function () {
             });
         });
         it('未获取验证码时应该返回验证码错误', function () {
-            elect.loginInfo = null;
             return elect.getCookie().then(function () {
                 return elect.login(config.correct.username, config.correct.password, '12345').then(function () {
                     throw Error.success;
@@ -373,7 +361,6 @@ describe.only('elect', function () {
             });
         });
         it('登录后退出再登录应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.logout();
             }).then(function () {
@@ -385,13 +372,11 @@ describe.only('elect', function () {
     });
     describe('#logout()', function () {
         it('登录后退出应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.logout();
             });
         });
         it('未获取Cookie应该返回需要Cookie', function () {
-            elect.loginInfo = null;
             return elect.logout().then(function () {
                 throw Error.success;
             }, function (err) {
@@ -399,7 +384,6 @@ describe.only('elect', function () {
             });
         });
         it('登录后退出两次应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.logout().then(function () {
                     return elect.logout();
@@ -409,13 +393,11 @@ describe.only('elect', function () {
     });
     describe('#isLogin()', function () {
         it('正常登陆应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.isLogin();
             });
         });
         it('未登陆应该返回需要登陆', function () {
-            elect.loginInfo = null;
             return elect.getCheckCode().then(function (imageData) {
                 return elect.isLogin().then(function () {
                     throw Error.success;
@@ -425,7 +407,6 @@ describe.only('elect', function () {
             });
         });
         it('未获取Cookie应该返回需要Cookie', function () {
-            elect.loginInfo = null;
             return elect.isLogin().then(function () {
                 throw Error.success;
             }, function (err) {
@@ -433,7 +414,6 @@ describe.only('elect', function () {
             });
         });
         it('退出后应该返回需要登录', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.logout().then(function () {
                     return elect.isLogin().then(function () {
@@ -447,7 +427,6 @@ describe.only('elect', function () {
     });
     describe('#getList()', function () {
         it('正常获取应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.getList().then(function (courses) {
                     assert(courses);
@@ -455,7 +434,6 @@ describe.only('elect', function () {
             });
         });
         it('未登录获取应该返回需要登录', function () {
-            elect.loginInfo = null;
             return elect.getCheckCode().then(function (imageData) {
                 return elect.getList().then(function (courses) {
                     throw Error.success;
@@ -465,7 +443,6 @@ describe.only('elect', function () {
             });
         });
         it('退出后应该返回需要登录', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.logout().then(function () {
                     return elect.getList().then(function (courses) {
@@ -477,7 +454,6 @@ describe.only('elect', function () {
             });
         });
         it('连续获取两次应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.getList().then(function (courses) {
                     assert(courses);
@@ -490,7 +466,6 @@ describe.only('elect', function () {
     });
     describe('#getDetail()', function () {
         it('正常获取应该无错误', function () {
-            elect.loginInfo = null;
             return autoLogin(config.correct.username, config.correct.password).then(function () {
                 return elect.getDetail().then(function (detail) {
                     assert(detail);
